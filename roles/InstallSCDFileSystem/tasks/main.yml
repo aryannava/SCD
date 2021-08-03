@@ -1,0 +1,42 @@
+---
+- name: Import {{ app_env_name }} environment variables
+  include_vars: host_vars/SCD.yml
+  no_log: true
+  
+- name: setup the Job Template
+  set_fact: 
+    task_execution_status: "{{tower_job_template_name | regex_replace('-', '_') | regex_replace(' ', '')}}"
+
+# Blok for Download and extract the SCD Core File System
+- block:  
+    - name: Make sure SCD & temporaty directory structure existis on priamry node
+      win_file:
+        path: '{{ item }}'
+        state: directory
+      with_items:
+        - '{{ scd_file_share }}'
+        - '{{ temp_directory }}' 
+    
+    - name: Download SCD {{ scd_version }} core binary structure
+      win_get_url:
+        url: '{{ repo_url }}/SimCorp/SCDCore/{{ scd_version }}/64bit/SimCorp-SCDCore-{{ scd_version }}-64bit.zip'
+        dest: '{{ temp_directory }}\scd.zip'  
+
+    - name: Extarct SCD Core {{ scd_version }} Binary structure
+      win_unzip:
+        src: '{{ temp_directory }}\scd.zip'   
+        dest: '{{ temp_directory }}'
+    
+    - name: Copy SCD Core {{ scd_version }} bianry structure
+      win_copy:
+        src: '{{ temp_directory }}\SimCorp-SCDCore-{{ scd_version }}-64bit\'
+        dest: '{{ scd_file_share }}\'
+        remote_src: yes 
+  when: inventory_hostname in groups ['Primary_MUCS'] and ({{ task_execution_status }}_task_100) is not defined
+
+- name: set_task_result_stat
+  when: ({{ task_execution_status }}_task_100) is not defined
+  set_stats:
+    data: 
+      "{{ task_execution_status }}_task_100": "Success"
+    per_host: no
