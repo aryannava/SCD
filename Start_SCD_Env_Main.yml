@@ -1,0 +1,12 @@
+---
+- name: Start SCD Environment
+  hosts: "{{ target }}"
+  connection: winrm
+  port: 5986
+  gather_facts: false
+  # order: sorted
+  serial: 1
+  
+  roles:
+  - role:  Start_SCD_Env
+ 
