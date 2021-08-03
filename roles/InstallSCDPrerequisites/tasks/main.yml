@@ -1,0 +1,131 @@
+---
+
+- name: Import {{app_env_name}} environment variables
+  include_vars: host_vars/SCD.yml
+  no_log: true
+
+- name: setup the Job Template
+  set_fact: 
+    task_execution_status: "{{tower_job_template_name | regex_replace('-', '_') | regex_replace(' ', '')}}"
+
+# First block - Account permission 
+- block: 
+  - name: Make sure {{scd_dimension_account}} have local administrator access
+    win_group_membership:
+      name: Administrators
+      members:
+        - '{{ scd_dimension_account }}'
+      state: present  
+
+  - name: Make sure {{scd_dimension_account}} has logon as service rights
+    win_user_right:
+      name: SeServiceLogonRight
+      users:
+      - '{{ scd_dimension_account }}'
+      action: add
+  when: ({{ task_execution_status }}_task_100) is not defined
+
+- name: set_task_result_stat
+  when: ({{ task_execution_status }}_task_100) is not defined
+  set_stats:
+    data: 
+      "{{ task_execution_status }}_task_100": "Success"
+    per_host: no  
+
+# Second block - Install DotNet if not installed
+- block: 
+  - name: Check Installed .Net Framerwork
+    win_shell: 'Get-WindowsFeature | Where-Object {$_. installstate -eq "installed"} | Format-List Name,Installstate | findstr Framework'
+    register: installed_net
+
+  - name: Verify Installation of .Net Framerwork 
+    win_shell: '(Get-ItemProperty "HKLM:SOFTWARE\Microsoft\NET Framework Setup\NDP\v4\Full").Release -ge {{dotnet_reease_number}}'
+    register: flag_net_status
+
+  - debug:
+      msg: "dotNet NOT installed"
+    when: "'False' in flag_net_status.stdout"
+
+  - name: Install Microsoft Net Framework 
+    win_package:
+      path: '{{repo_url}}/Microsoft/DotNetFramework/{{ dotnetver }}/64bit/DotNetFramework-{{ dotnetver }}-64bit.exe'
+      product_id: '{BD6F5371-DAC1-30F0-9DDE-CAC6791E28C3}'
+      arguments: /q /norestart
+    become: yes
+    become_user: Administrator
+    become_method: runas 
+    register: dotnetfr_status
+    when: "'False' in flag_net_status.stdout"
+  when: ({{ task_execution_status }}_task_200) is not defined
+
+- name: set_task_result_stat
+  when: ({{ task_execution_status }}_task_200) is not defined
+  set_stats:
+    data: 
+      "{{ task_execution_status }}_task_200": "Success"
+    per_host: no 
+
+- debug:
+    msg: The .NET installation status - {{dotnetfr_status}}
+
+# Third block - Reboot server if required
+- block:
+  - name: Reboot the server
+    win_reboot:
+      connect_timeout: 5 
+      msg: Reboot initiated by Ansible
+      pre_reboot_delay: 2
+      post_reboot_delay: 10             
+      reboot_timeout: 600
+      test_command: whoami             
+    when: "'False' in flag_net_status.stdout and dotnetfr_status.reboot_required"
+  when: ({{ task_execution_status }}_task_300) is not defined
+
+- name: set_task_result_stat
+  when: ({{ task_execution_status }}_task_300) is not defined
+  set_stats:
+    data: 
+      "{{ task_execution_status }}_task_300": "Success"
+    per_host: no 
+
+# Fourth block - Verifying Oracle client and registry 
+- block: 
+  - name: Make sure Oracle client exists
+    win_stat:
+      path: '{{ oracle_client_oracle_base }}\product\{{ oracle_client_version }}\client_{{ Oracle_client_type }}_{{ oracle_client_bit_version }}'
+    register: oracle_client_oracle_home_status  
+
+  - name: make sure sqlnet.ora authentication methods updated
+    win_lineinfile:
+      path: '{{ oracle_client_oracle_base }}{{ oracle_client_bit_version}}\product\{{ oracle_client_version }}\client_{{ oracle_client_bit_version }}\network\admin\sqlnet.ora'
+      regexp: '^SQLNET.AUTHENTICATION_SERVICES='
+      line: 'SQLNET.AUTHENTICATION_SERVICES= (ALL,KERBROS5PRE)'
+    when: oracle_client_oracle_home_status.stat.exists == true
+
+  - name: make sure NLG_LANG exists in windows registry
+    win_regedit:
+      path: HKLM:\SOFTWARE\ORACLE
+      name: NLS_LANG
+      data: AMERICAN_AMERICA.WE8MSWIN1252   
+    when: oracle_client_oracle_home_status.stat.exists == true
+
+  - name: make sure TNS_ADMIN exists in windows registry
+    win_regedit:
+      path: HKLM:\SOFTWARE\ORACLE
+      name: TNS_ADMIN
+      data: '{{ oracle_client_oracle_base }}\TNSNames'     
+
+  - name: make sure TNS_ADMIN exists in environment variables
+    win_environment:
+      state: present
+      name: tns_admin
+      value: '{{ oracle_client_oracle_base }}\TNSNames' 
+      level: machine
+  when: ({{ task_execution_status }}_task_400) is not defined
+
+- name: set_task_result_stat
+  when: ({{ task_execution_status }}_task_400) is not defined
+  set_stats:
+    data: 
+      "{{ task_execution_status }}_task_400": "Success"
+    per_host: no
