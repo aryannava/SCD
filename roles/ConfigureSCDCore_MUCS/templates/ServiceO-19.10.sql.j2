@@ -1,0 +1,19 @@
+--Update Service Option / Communication server parameter
+
+ALTER TABLE scdat.comsrvcnfpars DISABLE ALL TRIGGERS;
+
+delete from Comsrvcnfpars;
+
+insert into Comsrvcnfpars (CSCNFPAR, CSPW, CSTEXT, CSTEXTPW, CSINSTTYPE)
+values ('SCD_PATH', 0, 'V:\ims\SC_Fast_Track\Project\FADM\ISUP\SCDimension\Master', null, ' ');
+
+insert into Comsrvcnfpars (CSCNFPAR, CSPW, CSTEXT, CSTEXTPW, CSINSTTYPE)
+values ('IN_OUT_DIR', 0, '\\{{mucs_primary_node_short}}\{{ app_env_name }}\ComSrv\InOut', null, ' ');
+
+insert into Comsrvcnfpars (CSCNFPAR, CSPW, CSTEXT, CSTEXTPW, CSINSTTYPE)
+values ('SERVERNAME', 0, 'APPSRVDEV11', null, ' ');
+
+commit;
+
+ALTER TABLE scdat.comsrvcnfpars ENABLE ALL TRIGGERS;
+
