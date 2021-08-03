@@ -1,0 +1,81 @@
+---
+- name: Import {{ app_env_name }} environment variables
+  include_vars: host_vars/SCD.yml
+  no_log: true
+
+- name: setup the Job Template
+  set_fact: 
+    task_execution_status: "{{tower_job_template_name | regex_replace('-', '_') | regex_replace(' ', '')}}"
+
+- name: Set the value for mucs_primary_node_short var
+  set_fact:
+    mucs_primary_node_short: '{{mucs_primary_node.split(".")[0]}}'
+
+# # Install Agent and Cache Manager - Start services 
+- block:
+
+#   - name: Install SCD Service Agent and Cache manager
+#     win_command: '\\{{mucs_primary_node}}\{{ app_env_name }}\Bin\ScdSvcAgent.exe -install -installfolder={{temp_drive}}\SCD\SCD_SP_Agent -maxrunningservices=20 -cachemanagerinstallfolder={{temp_drive}}\SCD\SCD_Cache_Manager -cachefolder={{temp_drive}}\SCD\SCD_FileCache -osuser:otppb\{{ lookup("env", "app_svc_acc_1") }} -ospassword:{{ lookup("env", "app_svc_acc_pass_1") }} -cachemanagerosuser:otppb\{{ lookup("env", "app_svc_acc_1") }} -cachemanagerospassword:{{ lookup("env", "app_svc_acc_pass_1") }}'
+#   #  no_log: true  
+
+ 
+# Run exe file by disabling UAC
+
+  - name: Disabling UAC
+    win_regedit:
+      path: HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\policies\system
+      name: EnableLUA
+      data: 0
+      type: dword
+      state: present
+    register: uac_result
+
+  # - name: reboot after disabling UAC
+  #   win_reboot:
+  #   when: uac_result is changed
+  #     register: windows_rebooted
+     
+  - name: Install Cache manager
+    win_command: '{{temp_drive}}\SCD\SCD_Cache_Manager\ScdSvcCacheManager.exe'
+    # when: windows_rebooted is changed
+     
+  - name: Win Wait for Cache manager
+    win_wait_for: 
+      timeout: 180
+
+
+  - name: Install Service Agent
+    win_command: '{{temp_drive}}\SCD\SCD_SP_Agent\ScdSvcAgent.exe -console'
+    # when: windows_rebooted is changed
+  
+  - name: Gather Cache Mgr & Agent Service Names  
+    win_shell: (Get-Service -name SimCorpDimension*).Name  
+    register: CacheAgentservices  
+    changed_when: no
+    
+  - name: Start Cache Mgr & Agent Services  
+    win_service:  
+      name: "{{ item }}"  
+      state: stopped  
+      start_mode: auto  
+    with_items: "{{ CacheAgentservices.stdout_lines }}" 
+
+  - name: Enabling UAC
+    win_regedit:
+      path: HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\policies\system
+      name: EnableLUA
+      data: 1
+      type: dword
+      state: present
+    register: uac_result_enable    
+ 
+  # when: "inventory_hostname in groups ['SCD_AGENTS']"
+  when: inventory_hostname in groups ['SCD_AGENTS'] and ({{ task_execution_status }}_task_1000) is not defined 
+
+- name: set_task_result_stat
+  when: ({{ task_execution_status }}_task_1000) is not defined
+  set_stats:
+    data: 
+      "{{ task_execution_status }}_task_1000": "Success"
+    per_host: no
+ 
