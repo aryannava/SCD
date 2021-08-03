@@ -1,0 +1,105 @@
+; cnf.ini
+
+[portal]
+urlprotocol={{ app_env_name }}
+
+[config]
+state={{ app_env_name }}
+icon=green
+
+; dbname : {{ scd_db_name }}
+dbname={{ scd_db_name }}
+; dbconnecthost, dbconnectport, dbconnectprotocol and dbconnectservice or dbconnectsid : alternative data source specification
+dbconnecthost=
+dbconnectport=
+dbconnectprotocol=
+dbconnectservice=
+dbconnectsid=
+
+; datowner : data tables owner
+datowner=SCDAT
+; datts : data tables owner default tablespace
+datts=SCDAT
+; sysowner : system tables owner
+sysowner=SCSYS
+; systs : system tables owner default tablespace
+systs=SCSYS
+; selrole : role for select access for use by other users
+selrole=SCREPROLE
+; dexrole : role for select access to DEX schema tables
+dexrole=SCDEXROLE
+; reportrole : role for select access to SCD and DEX schema tables
+reportrole=SCDPROD52REPORTROLE
+; userrole : role for users
+userrole=SCROLE
+; userprofile : profile for users
+userprofile=SCUSERPROFILE
+; systemprofile : profile for system users
+systemprofile=SCSYSPROFILE
+; mqtabrole : role for access to external tables
+mqtabrole=
+; userts : default tablespace for users
+userts=SCUSERS
+; indexts : tablespace for indexes
+indexts=SCINDX
+; auditts : tablespace for audit trail
+auditts=SCAUDIT
+; audixts : tablespace for audit trail indexes
+audixts=SCAUDIX
+
+; trdowner : Trade order manager data tables owner
+trdowner=
+; trdts : Trade order manager data tables tablespace
+trdts=
+; trdindexts : Trade order manager indexes tablespace
+trdindexts=
+; trdarcts : Trade order manager archive tablespace
+trdarcts=
+
+; aodefnocpuscheduled : Reducing number of parallel degree when using scheduler
+aodefnocpuscheduled=
+; aoparallelthresholdsize : Threshold size for when it is optimal for using parallel degree
+aoparallelthresholdsize=
+
+; dbaudit : enable audit trail: 0 = no, 1 = yes
+dbaudit=1
+; archdir : Oracle directory for archiving
+archdir=
+; archparallelselect : the degree of parallelism to be used when querying the data to archive
+archparallelselect=1
+; archparallelinsert : the degree of parallelism and the number of files to use when archiving
+archparallelinsert=1
+
+; dbstat : statistics: 0 = no, 1 = yes
+dbstat=1
+; dbconstvalidate : 0~do not validate check constraints upon creation, 1~validate constraints immediately
+dbconstvalidate=0
+; dbgrant : grant to: 0~only between system and data table owners, 1~public
+dbgrant=0
+
+; useosaut : use OS authentication
+useosaut=0
+
+; Mucs : Server,Port
+Mucs={{mucs_primary_node_short}},5263
+; MucsFailover : Server,Port
+MucsFailover=
+aoparallel=1
+MucsLogRotateSize=1000000
+LogRotateSize=1000000
+useeventlog=1
+exttabdir=
+exttablogdir=
+serverwssize=512000
+UnifiedLogging=3
+ScdLogSplit=1
+SvcDirectoryService={{SvcDirectoryService1}},50000;{{SvcDirectoryService2}},50000
+specroleprefix=SCDAT
+LogWriter1=database
+helpurl=http://scdhelpdev.otpp.com/
+
+[lib]
+etl=\\{{mucs_primary_node_short}}\ETL
+extractor=\\{{mucs_primary_node_short}}\{{ app_env_name }}\Extractor
+bloomberg=\\{{mucs_primary_node_short}}\{{ app_env_name }}\Bloomberg
+netroot=\\{{mucs_primary_node_short}}\{{ app_env_name }}
