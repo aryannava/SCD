@@ -1,0 +1,56 @@
+- name: Import {{ app_env_name }} environment variables
+  include_vars: host_vars/SCD.yml
+  no_log: true
+
+# Start SCD MUCS Service
+- block:
+  - name: Configuring SCD Platform Model | Preparing Model File
+    template:
+      src: '{{ item }}'
+      dest: '{{ temp_dir }}\SCDTestModel-{{ scd_version }}.xml'
+    with_items:
+      - 'SCDTestModel-{{ scd_version }}.xml.j2'
+
+  - name: Configuring Service Platform Model | Import Model
+    win_shell: '\\{{ inventory_hostname }}\{{ app_env_name }}\bin\scdsvcctl model import -filename {{ temp_dir }}\SCDTestModel-{{ scd_version}}.xml'
+   # become: yes
+   # become_user: '{{ scd_app_user_model }}'
+    register: modelimport
+
+  - name: Configuring Service Platform Model | Enabling maintenance mode
+    win_shell: '\\{{ inventory_hostname }}\{{ app_env_name }}\bin\scdsvcctl maint begin'
+    become: yes
+    become_user: '{{ scd_app_user_model }}'
+    register: maintenancemode
+
+  - name: Configuring Service Platform Model | Disable automation
+    win_shell: '\\{{ inventory_hostname }}\{{ app_env_name }}\bin\scdsvcctl automation disable'
+    become: yes
+    become_user: '{{ scd_app_user_model }}'
+    register: autodisable
+
+  - name: Configuring Service Platform Model | Unload
+    win_shell: '\\{{ inventory_hostname }}\{{ app_env_name }}\bin\scdsvcctl automation unload'
+    become: yes
+    become_user: '{{ scd_app_user_model }}'
+    register: autounload    
+
+  - name: Configuring Service Platform Model | Load
+    win_shell: '\\{{ inventory_hostname }}\{{ app_env_name }}\bin\scdsvcctl automation load -model SCDTestModel1910'
+    become: yes
+    become_user: '{{ scd_app_user_model }}'
+    register: autoload  
+    
+  - name: Configuring Service Platform Model | Enable automation
+    win_shell: '\\{{ inventory_hostname }}\{{ app_env_name }}\bin\scdsvcctl automation enable'
+    become: yes
+    become_user: '{{ scd_app_user_model }}'
+    register: autoenable  
+
+  - name: Configuring Service Platform Model | Disabling maintenance mode
+    win_shell: '\\{{ inventory_hostname }}\{{ app_env_name }}\bin\scdsvcctl maint end'
+    become: yes
+    become_user: '{{ scd_app_user_model }}'
+    register: maintenancemodedisabled       
+    
+  when: "inventory_hostname in groups ['Primary_MUCS']"
