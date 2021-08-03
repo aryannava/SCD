@@ -1,0 +1,11 @@
+---
+- name: Remove SCD Core components 
+  hosts: "{{ target }}"
+  connection: winrm
+  order: reverse_sorted
+  port: 5986
+  gather_facts: false  
+  serial: 1
+  roles:
+  - role:  RemoveSCDCore
+ 
