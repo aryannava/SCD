@@ -1,0 +1,17 @@
+---
+
+- name: Configure SCD Core components on primary node and Install Agents
+  hosts: "{{ target }}"
+  order: sorted
+  connection: winrm
+  port: 5986
+  gather_facts: false
+
+  vars:
+    Tool_state: Install
+  vars_files: host_vars/SCD.yml
+
+  roles:
+    - role: ConfigureSCDCore_Agents
+      when: inventory_hostname in groups ['SCD_AGENTS']
+   
