@@ -1,0 +1,16 @@
+---
+
+- name: Install SCD File System  on File Server Primary Node
+  hosts: "{{ target }}"
+
+  connection: winrm
+  port: 5986
+  gather_facts: false
+
+  vars:
+    Tool_state: Install
+  vars_files: host_vars/SCD.yml
+
+  roles:
+    - InstallSCDFileSystem
+   
