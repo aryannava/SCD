@@ -1,1 +1,40 @@
 
+temp_drive: 'C:'
+temp_directory: '{{temp_drive}}\Temp'
+
+scd_app_env_name: '_INT_POC'
+app_name: 'SCD'
+app_env_name: '{{app_name}}{{scd_app_env_name}}'
+#scd_app_user_model: adminman
+scd_app_user_model: 'otppb\{{ lookup("env", "AnsibleProd") }}'
+
+
+dotnetver: '4.8'
+dotnet_reease_number: '528040'
+Tool_state: Install
+
+scd_app_user: 'domain\{{ lookup("env", "app_svc_acc_1") }}'
+scd_dimension_account: 'account_name'
+scd_file_share: '{{temp_drive}}\{{app_env_name}}'
+scd_version: '19.10'
+scd_db_name: SCDAZ1
+SvcDirectoryService1: 
+SvcDirectoryService2: 
+
+Mucs_nodes: 1
+agent_nodes: 2
+mucs_primary_node: 
+mucs_secondary_node: 
+mucs_primary_node_short:
+mucs_secondary_node_short: 
+
+oracle_client_oracle_base: '{{temp_drive}}\Oracle'
+Oracle_client_type: Runtime
+oracle_client_version: '12.1.0'
+oracle_client_bit_version: 64bit
+oracle_client_oracle_home: '{{ oracle_client_oracle_base }}\product\{{ oracle_client_version }}\client_{{ Oracle_client_type }}_{{ oracle_client_bit_version }}'
+oracle_client_inventory_location: '{{temp_drive}}\Program Files\Oracle\Inventory'
+oracle_client_custom_install_components:
+  - oracle.ntoramts:{{oracle_client_version}}.0
+Oracle_client_installed:  
+oracle_client_oracle_home_status:
