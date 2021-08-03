@@ -1,0 +1,87 @@
+---
+# Remove SCD Core Binaries from Netroot
+# Uninstall SCD Service Agent and Cache Manager
+# Uinstall MUCS
+# Restart Servers
+
+- name: Import {{ app_env_name }} environment variables
+  include_vars: host_vars/SCD_REMOVE.yml
+  no_log: true
+
+# Uninstall SCD Service Agent, Cache Manager and Reboot the Server
+- block:
+  - name: Stop Service Agent Service
+    win_service:
+      name: SimCorpDimensionServiceAgent{{ app_env_name }}
+      state: stopped    
+
+  - name: Stop Cache Manager Service
+    win_service:
+      name: SimCorpDimensionCacheManager{{ app_env_name }}
+      state: stopped    
+
+  - name: Uninstall SCD Service Agent
+    win_command: '\\{{mucs_primary_node}}\{{ app_env_name }}\Bin\ScdSvcAgent.exe -uninstall'
+    
+  - name: Uninstall Cache Manager
+    win_command: '\\{{mucs_primary_node}}\{{ app_env_name }}\Bin\ScdSvcAgent.exe -uninstallcachemanager'
+
+  - name: Remove Cache Manager Service
+    win_command: sc delete SimCorpDimensionCacheManager{{ app_env_name }}
+    
+  - name: Removing SCD SVC Agent & Cache Manager directory structure existis on service Agent node
+    win_file:
+      path: '{{ item }}'
+      state: absent
+    with_items:
+      - '{{ scd_svc_agent_dir }}'
+      - '{{ scd_cache_manager_dir }}' 
+
+  - name: Rebooting the server
+    win_reboot:
+      connect_timeout: 5 
+      msg: Reboot initiated by Ansible - SCD Agent removal 
+      pre_reboot_delay: 2
+      post_reboot_delay: 10             
+      reboot_timeout: 600
+  when: "inventory_hostname in groups ['SCD_AGENTS']"      
+
+# # Uninstall SCD MUCS service and Reboot the Server
+# - block:
+#     - name: Stop MUCS windows service exists on Secondary node
+#       win_service:
+#         name: '{{ app_env_name }}MUCS'
+#         state: stopped
+
+#     - name: Remove MUCS windows service exists on Secondary node
+#       win_command: sc delete {{ app_env_name }}MUCS
+
+#     - name: Rebooting the server
+#       win_reboot:
+#         connect_timeout: 5 
+#         msg: Reboot initiated by Ansible - SCD MUCS removal 
+#         pre_reboot_delay: 2
+#         post_reboot_delay: 10             
+#         reboot_timeout: 600
+  
+#   when: inventory_hostname in groups ['Secondary_MUCS'] and Mucs_nodes == 2 
+
+# Uninstall SCD MUCS Service, Reboot the Server and Remove SCD Core Binaries
+- block:
+    - name: Stop MUCS windows service exists on Primary node
+      win_service:
+        name: '{{ app_env_name }}MUCS'
+        state: stopped
+
+    - name: Remove MUCS windows service from Primary Node
+      win_command: sc delete {{ app_env_name }}MUCS
+
+    - name: Rebooting the server
+      win_reboot:
+        connect_timeout: 5 
+        msg: Reboot initiated by Ansible - SCD MUCS removal 
+        pre_reboot_delay: 2
+        post_reboot_delay: 10             
+        reboot_timeout: 600
+        
+  when: "inventory_hostname in groups ['Primary_MUCS']"
