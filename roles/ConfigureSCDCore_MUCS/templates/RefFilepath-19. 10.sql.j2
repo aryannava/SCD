@@ -1,0 +1,6 @@
+-- Update reference file path
+ALTER TABLE scdat.Reffilecomps DISABLE ALL TRIGGERS;
+UPDATE Reffilecomps c
+SET c.rfcomptxt = '\\DEV' || SUBSTR(c.rfcomptxt,instr(c.rfcomptxt,'\', 1,3)) WHERE c.rfcomptxt LIKE '%\\%';
+
+ALTER TABLE scdat.Reffilecomps ENABLE ALL TRIGGERS;
