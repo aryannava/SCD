@@ -1,0 +1,24 @@
+- name: Import {{ app_env_name }} environment variables
+  include_vars: host_vars/SCD.yml
+  no_log: true
+
+# Start SCD MUCS Service
+- block:
+    - name: Start MUCS windows service exists on Primary node
+      win_service:
+        name: '{{ app_env_name }}MUCS'
+        state: started
+  when: "inventory_hostname in groups ['Primary_MUCS']"
+
+# Start SCD Service Agent and Cache Manager
+- block:
+  - name: Start Cache Manager Service
+    win_service:
+      name: SimCorpDimensionCacheManager{{ app_env_name }}
+      state: started
+
+  - name: Start Service Agent Service
+    win_service:
+      name: SimCorpDimensionServiceAgent{{ app_env_name }}
+      state: started        
+  when: "inventory_hostname in groups ['SCD_AGENTS']"
