@@ -1,0 +1,12 @@
+---
+- name: Shutdown SCD Environment
+  hosts: "{{ target }}"
+  # order: reverse_sorted
+  connection: winrm
+  port: 5986
+  gather_facts: false
+  serial: 1
+  
+  roles:
+  - role:  Shutdown_SCD_Env
+ 
