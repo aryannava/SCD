@@ -1,0 +1,145 @@
+-- Update Communication server setup parameter  #run as scdat user
+ALTER TABLE scdat.comsrvsetupcnfpars DISABLE ALL TRIGGERS;
+delete from comsrvsetupcnfpars;
+
+insert into comsrvsetupcnfpars (CSSETUPIK, CSCNFPAR, CSPW, CSTEXT, CSTEXTPW, FLDLOCK, CSINSTTYPE)
+values (2, 'BLOOM_DIR', 0, '\\{{mucs_primary_node_short}}\{{ app_env_name }}\ComSrv\InOut\Bloomberg', null, 0, ' ');
+
+insert into comsrvsetupcnfpars (CSSETUPIK, CSCNFPAR, CSPW, CSTEXT, CSTEXTPW, FLDLOCK, CSINSTTYPE)
+values (2, 'ENCRYPTIONKEY', 1, '********', 'sdJ¥8(t', 0, ' ');
+
+insert into comsrvsetupcnfpars (CSSETUPIK, CSCNFPAR, CSPW, CSTEXT, CSTEXTPW, FLDLOCK, CSINSTTYPE)
+values (2, 'PASSWORD', 1, '********', 'POW574Kl', 0, ' ');
+
+insert into comsrvsetupcnfpars (CSSETUPIK, CSCNFPAR, CSPW, CSTEXT, CSTEXTPW, FLDLOCK, CSINSTTYPE)   
+values (2, 'PREFIX', 0, '{{ app_env_name }}', null, 0, ' ');
+
+insert into comsrvsetupcnfpars (CSSETUPIK, CSCNFPAR, CSPW, CSTEXT, CSTEXTPW, FLDLOCK, CSINSTTYPE)
+values (2, 'PRIVATEKEYFILE', 0, '\\{{mucs_primary_node_short}}\{{ app_env_name }}\Bloomberg\bloomberg_rsa.ppk', null, 0, ' ');
+
+insert into comsrvsetupcnfpars (CSSETUPIK, CSCNFPAR, CSPW, CSTEXT, CSTEXTPW, FLDLOCK, CSINSTTYPE)
+values (2, 'SERVER1', 0, 'dlsftp.bloomberg.com', null, 0, ' ');
+
+insert into comsrvsetupcnfpars (CSSETUPIK, CSCNFPAR, CSPW, CSTEXT, CSTEXTPW, FLDLOCK, CSINSTTYPE)
+values (2, 'SERVER2', 0, '160.43.94.2', null, 0, ' ');
+
+insert into comsrvsetupcnfpars (CSSETUPIK, CSCNFPAR, CSPW, CSTEXT, CSTEXTPW, FLDLOCK, CSINSTTYPE)
+values (16, 'ACKNAK', 0, 'dimension_{{ app_env_name }}_batch_response', null, 0, ' ');
+
+insert into comsrvsetupcnfpars (CSSETUPIK, CSCNFPAR, CSPW, CSTEXT, CSTEXTPW, FLDLOCK, CSINSTTYPE)
+values (16, 'MSGIN', 0, 'dimension_{{ app_env_name }}_batch_request', null, 0, ' ');
+
+insert into comsrvsetupcnfpars (CSSETUPIK, CSCNFPAR, CSPW, CSTEXT, CSTEXTPW, FLDLOCK, CSINSTTYPE)
+values (11, 'ACKNAK', 0, 'dimension_{{ app_env_name }}_response', null, 0, ' ');
+
+insert into comsrvsetupcnfpars (CSSETUPIK, CSCNFPAR, CSPW, CSTEXT, CSTEXTPW, FLDLOCK, CSINSTTYPE)
+values (6, 'ACKNAK', 0, 'dimension_{{ app_env_name }}_response', null, 0, ' ');
+
+insert into comsrvsetupcnfpars (CSSETUPIK, CSCNFPAR, CSPW, CSTEXT, CSTEXTPW, FLDLOCK, CSINSTTYPE)
+values (6, 'MSGIN', 0, 'dimension_{{ app_env_name }}_request', null, 0, ' ');
+
+insert into comsrvsetupcnfpars (CSSETUPIK, CSCNFPAR, CSPW, CSTEXT, CSTEXTPW, FLDLOCK, CSINSTTYPE)
+values (12, 'ACKNAK', 0, 'dimension_{{ app_env_name }}_response', null, 0, ' ');
+
+insert into comsrvsetupcnfpars (CSSETUPIK, CSCNFPAR, CSPW, CSTEXT, CSTEXTPW, FLDLOCK, CSINSTTYPE)
+values (12, 'MSGIN', 0, 'dimension_{{ app_env_name }}_request', null, 0, ' ');
+
+insert into comsrvsetupcnfpars (CSSETUPIK, CSCNFPAR, CSPW, CSTEXT, CSTEXTPW, FLDLOCK, CSINSTTYPE)
+values (10, 'MQ_INPUT_DIR', 0, '\\{{mucs_primary_node_short}}\ETL', null, 0, ' ');
+
+insert into comsrvsetupcnfpars (CSSETUPIK, CSCNFPAR, CSPW, CSTEXT, CSTEXTPW, FLDLOCK, CSINSTTYPE)
+values (14, 'ACKNAK', 0, 'dimension_{{ app_env_name }}_twf_response', null, 0, ' ');
+
+insert into comsrvsetupcnfpars (CSSETUPIK, CSCNFPAR, CSPW, CSTEXT, CSTEXTPW, FLDLOCK, CSINSTTYPE)
+values (14, 'MSGIN', 0, 'dimension_{{ app_env_name }}_twf_request', null, 0, ' ');
+
+insert into comsrvsetupcnfpars (CSSETUPIK, CSCNFPAR, CSPW, CSTEXT, CSTEXTPW, FLDLOCK, CSINSTTYPE)
+values (17, 'FILE_IN_DIR', 0, '\\{{mucs_primary_node_short}}\{{ app_env_name }}\ComSrv\InOut\Divamend\In', null, 0, ' ');
+
+insert into comsrvsetupcnfpars (CSSETUPIK, CSCNFPAR, CSPW, CSTEXT, CSTEXTPW, FLDLOCK, CSINSTTYPE)
+values (17, 'FILE_PROCESSED_DIR', 0, '\\{{mucs_primary_node_short}}\{{ app_env_name }}\ComSrv\InOut\Divamend\Processed', null, 0, ' ');
+
+insert into comsrvsetupcnfpars (CSSETUPIK, CSCNFPAR, CSPW, CSTEXT, CSTEXTPW, FLDLOCK, CSINSTTYPE)
+values (17, 'FILTER_LIST_DIR', 0, '\\{{mucs_primary_node_short}}\{{ app_env_name }}\ComSrv\InOut\Divamend\Out', null, 0, ' ');
+
+insert into comsrvsetupcnfpars (CSSETUPIK, CSCNFPAR, CSPW, CSTEXT, CSTEXTPW, FLDLOCK, CSINSTTYPE)
+values (14, 'TW_HISTORY', 0, '\\{{mucs_primary_node_short}}\{{ app_env_name }}\ComSrv\InOut\Tradeflow\history', null, 0, ' ');
+
+insert into comsrvsetupcnfpars (CSSETUPIK, CSCNFPAR, CSPW, CSTEXT, CSTEXTPW, FLDLOCK, CSINSTTYPE)
+values (14, 'TW_MESSAGE_QUEUE', 0, 'TW_STLMNT_STATEMENT', null, 0, ' ');
+
+insert into comsrvsetupcnfpars (CSSETUPIK, CSCNFPAR, CSPW, CSTEXT, CSTEXTPW, FLDLOCK, CSINSTTYPE)
+values (14, 'TW_SETTLEMENTFILEIN_DIR', 0, '\\{{mucs_primary_node_short}}\{{ app_env_name }}\ComSrv\InOut\Tradeflow\in', null, 0, ' ');
+
+insert into comsrvsetupcnfpars (CSSETUPIK, CSCNFPAR, CSPW, CSTEXT, CSTEXTPW, FLDLOCK, CSINSTTYPE)
+values (14, 'TW_TEMP', 0, '\\{{mucs_primary_node_short}}\{{ app_env_name }}\ComSrv\InOut\Tradeflow\in', null, 0, ' ');
+
+insert into comsrvsetupcnfpars (CSSETUPIK, CSCNFPAR, CSPW, CSTEXT, CSTEXTPW, FLDLOCK, CSINSTTYPE)
+values (15, 'SPREADSHEET_HISTORY', 0, '\\{{mucs_primary_node_short}}\{{ app_env_name }}\ComSrv\InOut\spreadsheetupload\history', null, 0, ' ');
+
+insert into comsrvsetupcnfpars (CSSETUPIK, CSCNFPAR, CSPW, CSTEXT, CSTEXTPW, FLDLOCK, CSINSTTYPE)
+values (15, 'SPREADSHEET_IN_DIR', 0, '\\{{mucs_primary_node_short}}\{{ app_env_name }}\ComSrv\InOut\spreadsheetupload\in', null, 0, ' ');
+
+insert into comsrvsetupcnfpars (CSSETUPIK, CSCNFPAR, CSPW, CSTEXT, CSTEXTPW, FLDLOCK, CSINSTTYPE)
+values (13, 'TW_NOVAT_DELREP_PARS', 0, 'TW_NOVAT_DELREP_PARS', null, 0, ' ');
+
+insert into comsrvsetupcnfpars (CSSETUPIK, CSCNFPAR, CSPW, CSTEXT, CSTEXTPW, FLDLOCK, CSINSTTYPE)
+values (13, 'TW_NOVAT_DEL_SB_PARS', 0, 'TW_NOVAT_DEL_SB_PARS', null, 0, ' ');
+
+insert into comsrvsetupcnfpars (CSSETUPIK, CSCNFPAR, CSPW, CSTEXT, CSTEXTPW, FLDLOCK, CSINSTTYPE)
+values (13, 'CUSTSHORTCUT', 0, 'sc', null, 0, ' ');
+
+insert into comsrvsetupcnfpars (CSSETUPIK, CSCNFPAR, CSPW, CSTEXT, CSTEXTPW, FLDLOCK, CSINSTTYPE)
+values (13, 'SPLITAMTMAX', 0, '50000000', null, 0, ' ');
+
+insert into comsrvsetupcnfpars (CSSETUPIK, CSCNFPAR, CSPW, CSTEXT, CSTEXTPW, FLDLOCK, CSINSTTYPE)
+values (13, 'SWIFTDIR', 0, '@confparam(Directory, COMSRV)', null, 0, ' ');
+
+insert into comsrvsetupcnfpars (CSSETUPIK, CSCNFPAR, CSPW, CSTEXT, CSTEXTPW, FLDLOCK, CSINSTTYPE)
+values (13, 'USEDEXPOSTQUERY', 0, 'No', null, 0, ' ');
+
+insert into comsrvsetupcnfpars (CSSETUPIK, CSCNFPAR, CSPW, CSTEXT, CSTEXTPW, FLDLOCK, CSINSTTYPE)
+values (13, 'USESPLITLARGEAMOUNT', 0, 'No', null, 0, ' ');
+
+insert into comsrvsetupcnfpars (CSSETUPIK, CSCNFPAR, CSPW, CSTEXT, CSTEXTPW, FLDLOCK, CSINSTTYPE)
+values (13, 'USEDEXPREQUERY', 0, 'Yes', null, 0, ' ');
+
+insert into comsrvsetupcnfpars (CSSETUPIK, CSCNFPAR, CSPW, CSTEXT, CSTEXTPW, FLDLOCK, CSINSTTYPE)
+values (13, 'USESTATISTICS', 0, 'Yes', null, 0, ' ');
+
+insert into comsrvsetupcnfpars (CSSETUPIK, CSCNFPAR, CSPW, CSTEXT, CSTEXTPW, FLDLOCK, CSINSTTYPE) 
+values (18, 'ACKNAK', 0, 'dimension_{{ app_env_name }}_crd_response', null, 0, ' ');
+
+insert into comsrvsetupcnfpars (CSSETUPIK, CSCNFPAR, CSPW, CSTEXT, CSTEXTPW, FLDLOCK, CSINSTTYPE) 
+values (18, 'MSGIN', 0, 'dimension_{{ app_env_name }}_crd_request', null, 0, ' ');
+
+insert into comsrvsetupcnfpars (CSSETUPIK, CSCNFPAR, CSPW, CSTEXT, CSTEXTPW, FLDLOCK, CSINSTTYPE) 
+values (18, 'SCD_QUERYTIMEOUT', 0, '300', null, 0, ' ');
+
+insert into comsrvsetupcnfpars (CSSETUPIK, CSCNFPAR, CSPW, CSTEXT, CSTEXTPW, FLDLOCK, CSINSTTYPE)
+values (19, 'BASE_FOLDER', 0, 'TM_IMPORT', null, 0, ' ');
+
+insert into comsrvsetupcnfpars (CSSETUPIK, CSCNFPAR, CSPW, CSTEXT, CSTEXTPW, FLDLOCK, CSINSTTYPE)
+values (19, 'DEX_DUPL_CHECK_VARVOL', 0, 'TM_CVSR_DUPLICATE_CHECK_VV', null, 0, ' ');
+
+insert into comsrvsetupcnfpars (CSSETUPIK, CSCNFPAR, CSPW, CSTEXT, CSTEXTPW, FLDLOCK, CSINSTTYPE)
+values (19, 'QUEUE_ACKNAK_OUT', 0, 'dimension_{{ app_env_name }}_tmx_response', null, 0, ' ');
+
+insert into comsrvsetupcnfpars (CSSETUPIK, CSCNFPAR, CSPW, CSTEXT, CSTEXTPW, FLDLOCK, CSINSTTYPE)
+values (19, 'QUEUE_MSG_IN', 0, 'dimension_{{ app_env_name }}_tmx_request', null, 0, ' ');
+
+insert into comsrvsetupcnfpars (CSSETUPIK, CSCNFPAR, CSPW, CSTEXT, CSTEXTPW, FLDLOCK, CSINSTTYPE)
+values (20, 'ACKNAK', 0, 'dimension_{{ app_env_name }}_dex_response', null, 0, ' ');
+
+insert into comsrvsetupcnfpars (CSSETUPIK, CSCNFPAR, CSPW, CSTEXT, CSTEXTPW, FLDLOCK, CSINSTTYPE)
+values (20, 'MSGIN', 0, 'dimension_{{ app_env_name }}_dex_request', null, 0, ' ');
+
+insert into scdat.comsrvsetupcnfpars (CSSETUPIK, CSCNFPAR, CSPW, CSTEXT, CSTEXTPW, FLDLOCK, CSINSTTYPE)
+values (21, 'ACKNAK', 0, 'dimension_{{ app_env_name }}_amqdfs_response', null, 0, ' ');
+
+insert into scdat.comsrvsetupcnfpars (CSSETUPIK, CSCNFPAR, CSPW, CSTEXT, CSTEXTPW, FLDLOCK, CSINSTTYPE)
+values (21, 'MSGIN', 0, 'dimension_{{ app_env_name }}_amqdfs_request', null, 0, ' ');
+
+Commit;
+
+ALTER TABLE scdat.comsrvsetupcnfpars Enable ALL TRIGGERS;
