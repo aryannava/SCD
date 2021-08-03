@@ -10,72 +10,302 @@
 - name: Set the value for mucs_primary_node_short var
   set_fact:
     mucs_primary_node_short: '{{mucs_primary_node.split(".")[0]}}'
-
-# # Install Agent and Cache Manager - Start services 
-- block:
-
-#   - name: Install SCD Service Agent and Cache manager
-#     win_command: '\\{{mucs_primary_node}}\{{ app_env_name }}\Bin\ScdSvcAgent.exe -install -installfolder={{temp_drive}}\SCD\SCD_SP_Agent -maxrunningservices=20 -cachemanagerinstallfolder={{temp_drive}}\SCD\SCD_Cache_Manager -cachefolder={{temp_drive}}\SCD\SCD_FileCache -osuser:otppb\{{ lookup("env", "app_svc_acc_1") }} -ospassword:{{ lookup("env", "app_svc_acc_pass_1") }} -cachemanagerosuser:otppb\{{ lookup("env", "app_svc_acc_1") }} -cachemanagerospassword:{{ lookup("env", "app_svc_acc_pass_1") }}'
-#   #  no_log: true  
-
- 
-# Run exe file by disabling UAC
-
-  - name: Disabling UAC
-    win_regedit:
-      path: HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\policies\system
-      name: EnableLUA
-      data: 0
-      type: dword
-      state: present
-    register: uac_result
-
-  # - name: reboot after disabling UAC
-  #   win_reboot:
-  #   when: uac_result is changed
-  #     register: windows_rebooted
-     
-  - name: Install Cache manager
-    win_command: '{{temp_drive}}\SCD\SCD_Cache_Manager\ScdSvcCacheManager.exe'
-    # when: windows_rebooted is changed
-     
-  - name: Win Wait for Cache manager
-    win_wait_for: 
-      timeout: 180
-
-
-  - name: Install Service Agent
-    win_command: '{{temp_drive}}\SCD\SCD_SP_Agent\ScdSvcAgent.exe -console'
-    # when: windows_rebooted is changed
   
-  - name: Gather Cache Mgr & Agent Service Names  
-    win_shell: (Get-Service -name SimCorpDimension*).Name  
-    register: CacheAgentservices  
-    changed_when: no
-    
-  - name: Start Cache Mgr & Agent Services  
-    win_service:  
-      name: "{{ item }}"  
-      state: stopped  
-      start_mode: auto  
-    with_items: "{{ CacheAgentservices.stdout_lines }}" 
+# First block - Creating the Temp location and setup PS tools
+- block: 
+  - name: Make sure SCD & temporaty directory structure existis on priamry node
+    win_file:
+      path: '{{ item }}'
+      state: directory
+    with_items:
+      - '{{ scd_file_share }}'
+      - '{{ temp_directory }}' 
 
-  - name: Enabling UAC
-    win_regedit:
-      path: HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\policies\system
-      name: EnableLUA
-      data: 1
-      type: dword
-      state: present
-    register: uac_result_enable    
- 
-  # when: "inventory_hostname in groups ['SCD_AGENTS']"
-  when: inventory_hostname in groups ['SCD_AGENTS'] and ({{ task_execution_status }}_task_1000) is not defined 
+  - name: Download PSexec utility for interactive session
+    win_get_url:
+      url: '{{ repo_url }}/Microsoft/PSTools/2.45/64bit/PSTools.zip'
+      dest: '{{ temp_directory }}'
+  
+  - name: Extract PSExec Utility
+    win_unzip:
+      src: '{{ temp_directory }}\PSTools.zip'
+      dest: '{{temp_drive}}\PSTools'
+
+  when: inventory_hostname in groups ['Primary_MUCS'] and ({{ task_execution_status }}_task_100) is not defined
 
 - name: set_task_result_stat
-  when: ({{ task_execution_status }}_task_1000) is not defined
+  when: ({{ task_execution_status }}_task_100) is not defined
   set_stats:
     data: 
-      "{{ task_execution_status }}_task_1000": "Success"
-    per_host: no
- 
+      "{{ task_execution_status }}_task_100": "Success"
+    per_host: no 
+
+# Second block - Setup shares
+- block:
+  - name: Create scd binary shares
+    win_share: 
+      name: '{{ app_env_name }}'
+      description: SCD share
+      path: '{{ scd_file_share }}'
+      list: yes
+      full: Administrators
+      change: Everyone
+      read: Everyone  
+  
+  - name: Create scd ETL share
+    win_share: 
+      name: ETL
+      description: SCD share
+      path: '{{scd_file_share}}\ETL'
+      list: yes
+      full: Administrators
+      change: Everyone
+      read: Everyone  
+  when: inventory_hostname in groups ['Primary_MUCS'] and ({{ task_execution_status }}_task_200) is not defined
+
+- name: set_task_result_stat
+  when: ({{ task_execution_status }}_task_200) is not defined
+  set_stats:
+    data: 
+      "{{ task_execution_status }}_task_200": "Success"
+    per_host: no 
+
+# Third block - setup cnf.ini
+- block: 
+  - name: Make sure cnf.ini has updated environment variables
+    template:
+      dest: '{{ scd_file_share }}\Data\cnf.ini'
+      src: cnf.ini.j2
+      backup: yes
+    register: result_cnf_ini
+    # ignore_errors: yes
+  
+  - name: Update cnf.ini for secondary failover node
+    win_lineinfile:
+      path: '{{ scd_file_share }}\Data\cnf.ini'
+      regexp: 'MucsFailover='
+      line: 'MucsFailover= {{mucs_secondary_node_short}},5264'
+    when: Mucs_nodes == 2
+
+  - name: Update cnf.ini to remove secondary failover node
+    win_lineinfile:
+      path: '{{ scd_file_share }}\Data\cnf.ini'
+      regexp: 'MucsFailover='
+      state: absent
+    when: Mucs_nodes == 1
+  
+  - name: Update cnf.ini for Directory Service Multi Agent node
+    win_lineinfile:
+      path: '{{ scd_file_share }}\Data\cnf.ini'
+      regexp: '^SvcDirectoryService='
+      line: 'SvcDirectoryService= {{SvcDirectoryService1}},50000;{{SvcDirectoryService2}},50000'
+    when: agent_nodes == 2
+
+  - name: Update cnf.ini for Directory Service Multi Agent node
+    win_lineinfile:
+      path: '{{ scd_file_share }}\Data\cnf.ini'
+      regexp: '^SvcDirectoryService='
+      line: 'SvcDirectoryService= {{SvcDirectoryService1}},50000;{{SvcDirectoryService2}},50000;'
+    when: agent_nodes >= 3
+  when: inventory_hostname in groups ['Primary_MUCS'] and ({{ task_execution_status }}_task_300) is not defined
+
+- name: set_task_result_stat
+  when: ({{ task_execution_status }}_task_300) is not defined
+  set_stats:
+    data: 
+      "{{ task_execution_status }}_task_300": "Success"
+    per_host: no 
+
+# Fourth block - Deletion of main.dws
+- block: 
+  - name: Make sure older main.dws files have been removed
+    win_file:
+      path: '{{ scd_file_share }}\Prog\main.dws'
+      state: absent
+  when: inventory_hostname in groups ['Primary_MUCS'] and ({{ task_execution_status }}_task_400) is not defined
+
+- name: set_task_result_stat
+  when: ({{ task_execution_status }}_task_400) is not defined
+  set_stats:
+    data: 
+      "{{ task_execution_status }}_task_400": "Success"
+    per_host: no 
+
+# Fifth block - Setup MUCS service
+- block:                
+  - name: Create MUCS windows service on Primary Node
+    win_service:
+      name: '{{ app_env_name }}MUCS'
+      state: stopped
+      username: 'otppb\{{ lookup("env", "app_svc_acc_1") }}'
+      password: '{{ lookup("env", "app_svc_acc_pass_1") }}'
+      path: '"\\{{mucs_primary_node}}\{{ app_env_name }}\Bin\scd.exe" "-SERVICE=DISPATCH,{{ app_env_name }}MUCS" -TYPE=MUCS -MUCS=2'
+      description: 'Add various efforts to SimCorp Dimension. Some server takes long time to start. To increase the start up timeout see System Administrators Manual.'
+      display_name: 'SimCorp Dimension 19.10{{ app_env_name }}MUCS'   
+  #  no_log: true         
+  
+  - name: Start MUCS service on primary node
+    win_service:
+      name: '{{ app_env_name }}MUCS'  
+      state: started
+    register: mucs_service_state
+    # until: 'mucs_service_state.state is "started"'
+    # delay: 60
+    # retries: 5
+    # failed_when: mucs_service_state.state is not running
+  
+  - debug:
+      msg: Service status is {{mucs_service_state.state}} and {{mucs_service_state}}
+
+  - name: Waiting for Mucs Service to start
+    win_wait_for:
+      timeout: 120
+  
+  when: inventory_hostname in groups ['Primary_MUCS'] and ({{ task_execution_status }}_task_500) is not defined
+
+- name: set_task_result_stat
+  when: ({{ task_execution_status }}_task_500) is not defined
+  set_stats:
+    data: 
+      "{{ task_execution_status }}_task_500": "Success"
+    per_host: no 
+
+- name: Verify Database Connectivity
+  win_command: 'sqlplus -L "{{ lookup("env", "dbuser") }}"/"{{ lookup("env", "dbpwd") }}"@"{{ scd_db_name }}"'
+  register: verifyoracle 
+  failed_when: verifyoracle.rc > 0 
+  # failed_when: verifyoracle.rc > 0 or "ERROR" in verifyoracle.stdout_lines
+
+- debug:
+    msg: The result is - {{verifyoracle.stdout_lines}}
+
+# Sixth block - Executing DB SYNC commands
+- block: 
+  - name: Run DBsync Exit job - Init 
+    win_psexec:
+      command: '\\{{mucs_primary_node}}\{{ app_env_name }}\Bin\scd.exe -np -job=EXIT -WS=init.dws -datpwd={{ lookup("env", "dbpwd") }}' 
+      interactive: yes
+      executable: '{{temp_drive}}\PSTools\PsExec.exe'
+      system: yes
+      elevated: yes
+      hostnames: '{{ inventory_hostname }}'
+  #   no_log: true  
+
+  - name: Run DBsync Exit job - SYNCDBVERS
+    win_psexec: 
+      command: '\\{{mucs_primary_node}}\{{ app_env_name }}\Bin\scd.exe -np -job=SYNCDBVERS -datpwd={{ lookup("env", "dbpwd") }}'
+      interactive: yes
+      executable: '{{temp_drive}}\PSTools\PsExec.exe'
+      system: yes
+      elevated: yes
+      hostnames: '{{ inventory_hostname }}'  
+  #   no_log: true    
+
+  - name: Run DBsync Exit job - SYNCDBUSERS
+    win_psexec: 
+      command: '\\{{mucs_primary_node}}\{{ app_env_name }}\Bin\scd.exe -np -job=SYNCDBUSERS -datpwd={{ lookup("env", "dbpwd") }}'
+      interactive: yes
+      executable: '{{temp_drive}}\PSTools\PsExec.exe'
+      system: yes
+      elevated: yes
+      hostnames: '{{ inventory_hostname }}'
+  #   no_log: true  
+    register: syncdbusers_result
+    failed_when: 
+    - syncdbusers_result.rc != 0 
+    - syncdbusers_result.rc != 1004
+    - syncdbusers_result.rc != 1099
+    # when: install_flag == true
+  when: inventory_hostname in groups ['Primary_MUCS'] and ({{ task_execution_status }}_task_600) is not defined
+
+- name: set_task_result_stat
+  when: ({{ task_execution_status }}_task_600) is not defined
+  set_stats:
+    data: 
+      "{{ task_execution_status }}_task_600": "Success"
+    per_host: no 
+
+# # 7th block - Reset task and generate L3 Scripts
+- block:
+  - name: Run DBsync Exit job - RESET_AFTER_COPY
+    win_psexec: 
+      command: '\\{{mucs_primary_node}}\{{ app_env_name }}\Bin\scd.exe -np -job=RESET_AFTER_COPY -datpwd={{ lookup("env", "dbpwd") }}'
+      interactive: yes
+      executable: '{{temp_drive}}\PSTools\PsExec.exe'
+      system: yes
+      elevated: yes
+      hostnames: '{{ inventory_hostname }}'
+  # #   no_log: true  
+  
+  - name: Configuring SCD GUI | Preparing Database SQL Commands
+    template:
+      src: '{{ item }}'
+      dest: '{{ temp_directory }}'
+    with_items:
+      - 'comsrv-{{ scd_version }}.sql.j2'
+      - 'RefFilepath-{{ scd_version }}.sql.j2'
+      - 'ServiceO-{{ scd_version }}.sql.j2'
+  when: inventory_hostname in groups ['Primary_MUCS'] and ({{ task_execution_status }}_task_700) is not defined
+
+- name: set_task_result_stat
+  when: ({{ task_execution_status }}_task_700) is not defined
+  set_stats:
+    data: 
+      "{{ task_execution_status }}_task_700": "Success"
+    per_host: no 
+
+# 8th block - Executing L3 scripts
+- block: 
+  - name: Configuring SCD GUI | Apply Comsrv changes to DB
+    win_command: 'sqlplus {{ lookup("env", "dbuser") }}/{{ lookup("env", "dbpwd") }}@{{ scd_db_name }} @"{{ temp_directory }}\comsrv-{{ scd_version }}".sql.j2' 
+    no_log: true
+    register: comsrvsql
+
+  - name: Configuring SCD GUI | Apply Reference File Path changes to DB
+    win_command: 'sqlplus {{ lookup("env", "dbuser") }}/{{ lookup("env", "dbpwd") }}@{{ scd_db_name }} @"{{ temp_directory }}\RefFilepath-{{ scd_version }}".sql.j2' 
+    no_log: true
+    register: reffilepathsql
+
+  - name: Configuring SCD GUI | Apply Service Object changes to DB
+    win_command: 'sqlplus {{ lookup("env", "dbuser") }}/{{ lookup("env", "dbpwd") }}@{{ scd_db_name }} @"{{ temp_directory }}\ServiceO-{{ scd_version }}".sql.j2' 
+    no_log: true
+    register: serviceobjectsql
+
+  - debug:
+      msg: The return codes are - comsrvsql - {{comsrvsql.rc}} reffilepathsql - {{reffilepathsql.rc}} serviceobjectsql {{serviceobjectsql.rc}}
+
+  when: inventory_hostname in groups ['Primary_MUCS'] and ({{ task_execution_status }}_task_800) is not defined 
+
+- name: set_task_result_stat
+  when: ({{ task_execution_status }}_task_800) is not defined
+  set_stats:
+    data: 
+      "{{ task_execution_status }}_task_800": "Success"
+    per_host: no 
+
+
+#   # when: inventory_hostname in groups ['Primary_MUCS']
+# 9th block - Setup MUCS in secondary node
+# - block:
+#   - name: make sure MUCS windows service exists on Secondary node
+#     win_service:
+#       name: '{{ app_env_name }}MUCS'
+#       state: stopped
+#       start_mode: manual
+#       username: 'otppb\{{ lookup("env", "app_svc_acc_1") }}'
+#       password: '{{ lookup("env", "app_svc_acc_pass_1") }}'
+#       path: '"\\{{mucs_primary_node}}\{{ app_env_name }}\Bin\scd.exe" "-SERVICE=DISPATCH,{{ app_env_name }}MUCS" -TYPE=MUCS -MUCS=2'
+#       description: 'Add various efforts to SimCorp Dimension. Some server takes long time to start. To increase the start up timeout see System Administrators Manual.'
+#       display_name: 'SimCorp Dimension Server: MUCS'
+#    # no_log: true  
+#     when: inventory_hostname in groups ['Secondary_MUCS']  
+
+#   # when: inventory_hostname in groups ['Secondary_MUCS'] and Mucs_nodes == 2
+#   when: inventory_hostname in groups ['Secondary_MUCS'] and ({{ task_execution_status }}_task_900) is not defined 
+
+# - name: set_task_result_stat
+#   when: ({{ task_execution_status }}_task_900) is not defined
+#   set_stats:
+#     data: 
+#       "{{ task_execution_status }}_task_900": "Success"
+#     per_host: no
